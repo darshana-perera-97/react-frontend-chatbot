@@ -113,7 +113,10 @@ const addMessageToSession = (sessionId, message) => {
 };
 
 // Middleware
-app.use(cors());
+app.use(cors({
+  origin: ['http://localhost:3000', 'http://localhost:3001'], // Admin and chatbot ports
+  credentials: true
+}));
 app.use(bodyParser.json());
 
 // Master prompt for solar system salesperson
@@ -353,6 +356,127 @@ app.get('/api/sessions', (req, res) => {
   }
 });
 
+// API endpoint to get analytics data
+app.get('/api/analytics', (req, res) => {
+  try {
+    const sessionIds = loadSessionIds();
+    const chats = loadChats();
+    
+    // Calculate analytics
+    const totalSessions = sessionIds.length;
+    const totalChats = Object.values(chats).reduce((total, sessionChats) => {
+      return total + (sessionChats ? sessionChats.length : 0);
+    }, 0);
+    
+    const recurringUsers = sessionIds.filter(session => {
+      return new Date(session.lastChatTime) > new Date(session.createdTime);
+    }).length;
+    
+    const uniqueUsers = totalSessions;
+    
+    // Calculate average chats per session
+    const avgChatsPerSession = totalSessions > 0 ? (totalChats / totalSessions).toFixed(2) : 0;
+    
+    // Calculate conversion rate (recurring users / total users)
+    const conversionRate = totalSessions > 0 ? ((recurringUsers / totalSessions) * 100).toFixed(1) : 0;
+    
+    // Get recent activity (last 24 hours)
+    const now = new Date();
+    const last24Hours = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+    
+    const recentSessions = sessionIds.filter(session => {
+      return new Date(session.lastChatTime) > last24Hours;
+    }).length;
+    
+    const recentChats = Object.values(chats).reduce((total, sessionChats) => {
+      if (!sessionChats) return total;
+      return total + sessionChats.filter(msg => {
+        return new Date(msg.timestamp) > last24Hours;
+      }).length;
+    }, 0);
+    
+    res.json({
+      websites: 1,
+      totalChats: totalChats,
+      totalUsers: uniqueUsers,
+      recurringUsers: recurringUsers,
+      avgChatsPerSession: parseFloat(avgChatsPerSession),
+      conversionRate: parseFloat(conversionRate),
+      recentActivity: {
+        sessions: recentSessions,
+        chats: recentChats
+      },
+      lastUpdated: now.toISOString()
+    });
+  } catch (error) {
+    console.error('Error getting analytics:', error);
+    res.status(500).json({ 
+      error: 'Internal server error',
+      message: 'Failed to get analytics data'
+    });
+  }
+});
+
+// API endpoint to get chat statistics
+app.get('/api/chat-stats', (req, res) => {
+  try {
+    const sessionIds = loadSessionIds();
+    const chats = loadChats();
+    
+    // Get all messages across all sessions
+    const allMessages = Object.values(chats).flat();
+    
+    // Calculate message statistics
+    const userMessages = allMessages.filter(msg => msg.sender === 'user');
+    const botMessages = allMessages.filter(msg => msg.sender === 'bot');
+    
+    // Get average response time (simplified)
+    const responseTimes = [];
+    for (let i = 0; i < allMessages.length - 1; i++) {
+      if (allMessages[i].sender === 'user' && allMessages[i + 1].sender === 'bot') {
+        const responseTime = new Date(allMessages[i + 1].timestamp) - new Date(allMessages[i].timestamp);
+        responseTimes.push(responseTime);
+      }
+    }
+    
+    const avgResponseTime = responseTimes.length > 0 
+      ? responseTimes.reduce((a, b) => a + b, 0) / responseTimes.length 
+      : 0;
+    
+    // Get most common user messages (top 5)
+    const messageCounts = {};
+    userMessages.forEach(msg => {
+      const text = msg.text.toLowerCase().trim();
+      if (text.length > 0) {
+        messageCounts[text] = (messageCounts[text] || 0) + 1;
+      }
+    });
+    
+    const topMessages = Object.entries(messageCounts)
+      .sort(([,a], [,b]) => b - a)
+      .slice(0, 5)
+      .map(([text, count]) => ({ text, count }));
+    
+    res.json({
+      totalMessages: allMessages.length,
+      userMessages: userMessages.length,
+      botMessages: botMessages.length,
+      avgResponseTime: Math.round(avgResponseTime / 1000), // in seconds
+      topUserMessages: topMessages,
+      sessionsWithMessages: Object.keys(chats).filter(sessionId => 
+        chats[sessionId] && chats[sessionId].length > 0
+      ).length,
+      lastUpdated: new Date().toISOString()
+    });
+  } catch (error) {
+    console.error('Error getting chat stats:', error);
+    res.status(500).json({ 
+      error: 'Internal server error',
+      message: 'Failed to get chat statistics'
+    });
+  }
+});
+
 // Health check endpoint
 app.get('/api/health', (req, res) => {
   res.json({ 
@@ -372,6 +496,8 @@ app.get('/', (req, res) => {
       'POST /api/session': 'Create a new chat session',
       'GET /api/session/:sessionId': 'Get session data and chat history',
       'GET /api/sessions': 'Get all sessions',
+      'GET /api/analytics': 'Get analytics data for admin dashboard',
+      'GET /api/chat-stats': 'Get detailed chat statistics',
       'GET /api/health': 'Check API health status'
     }
   });
