@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import { apiService } from '../services/apiService';
 
 const Chats = () => {
   const [sessions, setSessions] = useState([]);
@@ -7,6 +7,8 @@ const Chats = () => {
   const [chatMessages, setChatMessages] = useState([]);
   const [loading, setLoading] = useState(true);
   const [chatLoading, setChatLoading] = useState(false);
+  const [adminReply, setAdminReply] = useState('');
+  const [sendingReply, setSendingReply] = useState(false);
 
   useEffect(() => {
     fetchSessions();
@@ -15,7 +17,7 @@ const Chats = () => {
   const fetchSessions = async () => {
     try {
       setLoading(true);
-      const response = await axios.get('http://localhost:5111/api/sessions');
+      const response = await apiService.getSessions();
       setSessions(response.data);
     } catch (error) {
       console.error('Error fetching sessions:', error);
@@ -40,7 +42,7 @@ const Chats = () => {
   const fetchChatMessages = async (sessionId) => {
     try {
       setChatLoading(true);
-      const response = await axios.get(`http://localhost:5111/api/session/${sessionId}`);
+      const response = await apiService.getSession(sessionId);
       setChatMessages(response.data.messages || []);
     } catch (error) {
       console.error('Error fetching chat messages:', error);
@@ -68,6 +70,40 @@ const Chats = () => {
   const handleSessionSelect = (session) => {
     setSelectedSession(session);
     fetchChatMessages(session.sessionId);
+  };
+
+  const handleAdminReply = async (e) => {
+    e.preventDefault();
+    if (!adminReply.trim() || !selectedSession || sendingReply) return;
+
+    try {
+      setSendingReply(true);
+      const response = await apiService.sendAdminReply(
+        adminReply.trim(),
+        selectedSession.sessionId
+      );
+
+      if (response.data.success) {
+        // Add admin message to local state
+        const newAdminMessage = {
+          id: Date.now(),
+          text: adminReply.trim(),
+          sender: 'admin',
+          timestamp: new Date().toLocaleTimeString()
+        };
+        
+        setChatMessages(prev => [...prev, newAdminMessage]);
+        setAdminReply('');
+        
+        // Refresh the chat messages to get the latest from server
+        await fetchChatMessages(selectedSession.sessionId);
+      }
+    } catch (error) {
+      console.error('Error sending admin reply:', error);
+      alert('Failed to send admin reply. Please try again.');
+    } finally {
+      setSendingReply(false);
+    }
   };
 
   const formatDate = (dateString) => {
@@ -165,10 +201,22 @@ const Chats = () => {
                     chatMessages.map((message) => (
                       <div
                         key={message.id}
-                        className={`chat-message ${message.sender}`}
+                        className={`chat-message ${message.sender} ${
+                          message.sender === 'admin' ? 'admin-message' : ''
+                        }`}
                       >
                         <div className="d-flex justify-content-between align-items-start">
                           <div className="flex-grow-1">
+                            <div className="d-flex align-items-center mb-1">
+                              <span className={`badge me-2 ${
+                                message.sender === 'admin' ? 'bg-warning text-dark' :
+                                message.sender === 'bot' ? 'bg-info' :
+                                'bg-secondary'
+                              }`}>
+                                {message.sender === 'admin' ? 'Admin' :
+                                 message.sender === 'bot' ? 'Bot' : 'User'}
+                              </span>
+                            </div>
                             <p className="mb-1">{message.text}</p>
                             {message.confidence && (
                               <small className="text-muted">
@@ -197,6 +245,53 @@ const Chats = () => {
           </div>
         </div>
       </div>
+
+      {/* Admin Reply Section */}
+      {selectedSession && (
+        <div className="row mt-4">
+          <div className="col-12">
+            <div className="card">
+              <div className="card-header">
+                <h5 className="mb-0 text-primary fw-bold">Admin Reply</h5>
+                <small className="text-muted">Send a message as admin to this user</small>
+              </div>
+              <div className="card-body">
+                <form onSubmit={handleAdminReply}>
+                  <div className="row">
+                    <div className="col-md-10">
+                      <textarea
+                        className="form-control"
+                        rows="3"
+                        value={adminReply}
+                        onChange={(e) => setAdminReply(e.target.value)}
+                        placeholder="Type your admin reply here..."
+                        disabled={sendingReply}
+                        required
+                      />
+                    </div>
+                    <div className="col-md-2 d-flex align-items-end">
+                      <button
+                        type="submit"
+                        className="btn btn-primary w-100"
+                        disabled={!adminReply.trim() || sendingReply}
+                      >
+                        {sendingReply ? (
+                          <>
+                            <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                            Sending...
+                          </>
+                        ) : (
+                          'Send Reply'
+                        )}
+                      </button>
+                    </div>
+                  </div>
+                </form>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

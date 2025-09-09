@@ -265,7 +265,7 @@ app.post('/api/session', (req, res) => {
 // API endpoint to get chatbot response
 app.post('/api/chat', async (req, res) => {
   try {
-    const { message, sessionId } = req.body;
+    const { message, sessionId, senderType = 'user' } = req.body;
     
     if (!message || typeof message !== 'string') {
       return res.status(400).json({ 
@@ -273,39 +273,53 @@ app.post('/api/chat', async (req, res) => {
       });
     }
     
-    // Generate response using OpenAI
-    const response = await generateResponse(message);
-    
     // Create user message
     const userMessage = {
       id: Date.now(),
       text: message,
-      sender: 'user',
+      sender: senderType,
       timestamp: new Date().toLocaleTimeString()
     };
     
-    // Create bot response
-    const botResponse = {
-      id: Date.now() + 1,
-      text: response.text,
-      sender: 'bot',
-      timestamp: new Date().toLocaleTimeString(),
-      confidence: response.confidence
-    };
-    
-    // Store messages in session if sessionId is provided
+    // Store user message in session if sessionId is provided
     if (sessionId) {
       addMessageToSession(sessionId, userMessage);
-      addMessageToSession(sessionId, botResponse);
     }
     
-    // Simulate some processing time
-    await new Promise(resolve => setTimeout(resolve, 500 + Math.random() * 1000));
-    
-    res.json(botResponse);
+    // Only generate OpenAI response for regular user messages, not admin messages
+    if (senderType === 'user') {
+      // Generate response using OpenAI
+      const response = await generateResponse(message);
+      
+      // Create bot response
+      const botResponse = {
+        id: Date.now() + 1,
+        text: response.text,
+        sender: 'bot',
+        timestamp: new Date().toLocaleTimeString(),
+        confidence: response.confidence
+      };
+      
+      // Store bot response in session if sessionId is provided
+      if (sessionId) {
+        addMessageToSession(sessionId, botResponse);
+      }
+      
+      // Simulate some processing time
+      await new Promise(resolve => setTimeout(resolve, 500 + Math.random() * 1000));
+      
+      res.json(botResponse);
+    } else {
+      // For admin messages, just return the message without generating AI response
+      res.json({
+        success: true,
+        message: 'Admin message sent successfully',
+        adminMessage: userMessage
+      });
+    }
     
   } catch (error) {
-    console.error('Error generating response:', error);
+    console.error('Error processing message:', error);
     res.status(500).json({ 
       error: 'Internal server error',
       message: 'Sorry, I encountered an error. Please try again.'
@@ -417,6 +431,49 @@ app.get('/api/analytics', (req, res) => {
   }
 });
 
+// API endpoint for admin to send replies
+app.post('/api/admin/reply', async (req, res) => {
+  try {
+    const { message, sessionId } = req.body;
+    
+    if (!message || typeof message !== 'string') {
+      return res.status(400).json({ 
+        error: 'Message is required and must be a string' 
+      });
+    }
+    
+    if (!sessionId) {
+      return res.status(400).json({ 
+        error: 'Session ID is required' 
+      });
+    }
+    
+    // Create admin message
+    const adminMessage = {
+      id: Date.now(),
+      text: message,
+      sender: 'admin',
+      timestamp: new Date().toLocaleTimeString()
+    };
+    
+    // Store admin message in session
+    addMessageToSession(sessionId, adminMessage);
+    
+    res.json({
+      success: true,
+      message: 'Admin reply sent successfully',
+      adminMessage: adminMessage
+    });
+    
+  } catch (error) {
+    console.error('Error sending admin reply:', error);
+    res.status(500).json({ 
+      error: 'Internal server error',
+      message: 'Failed to send admin reply'
+    });
+  }
+});
+
 // API endpoint to get chat statistics
 app.get('/api/chat-stats', (req, res) => {
   try {
@@ -492,10 +549,11 @@ app.get('/', (req, res) => {
     message: 'Chatbot Backend API',
     version: '1.0.0',
     endpoints: {
-      'POST /api/chat': 'Send a message to get a response',
+      'POST /api/chat': 'Send a message to get a response (supports senderType: user/admin)',
       'POST /api/session': 'Create a new chat session',
       'GET /api/session/:sessionId': 'Get session data and chat history',
       'GET /api/sessions': 'Get all sessions',
+      'POST /api/admin/reply': 'Send admin reply to user (no OpenAI response)',
       'GET /api/analytics': 'Get analytics data for admin dashboard',
       'GET /api/chat-stats': 'Get detailed chat statistics',
       'GET /api/health': 'Check API health status'

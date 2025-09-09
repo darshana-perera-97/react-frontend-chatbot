@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import { apiService } from '../services/apiService';
 
 const Analytics = () => {
   const [analytics, setAnalytics] = useState({
@@ -19,7 +19,7 @@ const Analytics = () => {
       setLoading(true);
       
       // Fetch analytics data from backend API
-      const response = await axios.get('http://localhost:5111/api/analytics');
+      const response = await apiService.getAnalytics();
       const data = response.data;
 
       setAnalytics({

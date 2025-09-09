@@ -241,6 +241,20 @@ body {
   color: var(--text-primary);
 }
 
+.chat-message.admin {
+  background-color: #fff3cd;
+  border: 1px solid #ffeaa7;
+  color: #856404;
+  margin-left: auto;
+  margin-right: 0;
+}
+
+.chat-message.admin-message {
+  background-color: #fff3cd;
+  border: 1px solid #ffeaa7;
+  color: #856404;
+}
+
 /* Responsive Design */
 @media (max-width: 768px) {
   .sidebar {
