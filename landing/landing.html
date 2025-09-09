@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Landing Page with Floating Chatbot</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* Main Landing Content */
+        .landing-content {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            color: white;
+            padding: 20px;
+        }
+
+        .landing-content h1 {
+            font-size: 4rem;
+            margin-bottom: 20px;
+            font-weight: 700;
+            background: linear-gradient(45deg, #fff, #f0f0f0);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            animation: fadeInUp 1s ease-out;
+        }
+
+        .landing-content p {
+            font-size: 1.5rem;
+            margin-bottom: 30px;
+            opacity: 0.9;
+            animation: fadeInUp 1s ease-out 0.3s both;
+        }
+
+        .landing-content .subtitle {
+            font-size: 1.2rem;
+            opacity: 0.8;
+            animation: fadeInUp 1s ease-out 0.6s both;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Floating Chatbot Container */
+        .floating-chatbot {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 400px;
+            height: 600px;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            z-index: 1000;
+            transition: all 0.3s ease;
+            overflow: hidden;
+        }
+
+        .floating-chatbot.minimized {
+            height: 60px;
+            width: 200px;
+        }
+
+        /* Chatbot Header */
+        .chatbot-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .chatbot-header h3 {
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin: 0;
+        }
+
+        .chatbot-controls {
+            display: flex;
+            gap: 10px;
+        }
+
+        .control-btn {
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            color: white;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            transition: all 0.2s ease;
+        }
+
+        .control-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: scale(1.1);
+        }
+
+        .minimize-btn {
+            font-size: 16px;
+        }
+
+        .close-btn {
+            font-size: 18px;
+        }
+
+        /* Chatbot Iframe */
+        .chatbot-iframe {
+            width: 100%;
+            height: calc(100% - 60px);
+            border: none;
+            background: transparent;
+            transition: all 0.3s ease;
+        }
+
+        .floating-chatbot.minimized .chatbot-iframe {
+            display: none;
+        }
+
+        /* Loading State */
+        .loading {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: #667eea;
+            text-align: center;
+            z-index: 2;
+        }
+
+        .spinner {
+            border: 3px solid rgba(102, 126, 234, 0.3);
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 10px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Error State */
+        .error-state {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            color: #ff6b6b;
+            z-index: 2;
+            padding: 20px;
+        }
+
+        .error-icon {
+            font-size: 2rem;
+            margin-bottom: 10px;
+        }
+
+        /* Minimized State Content */
+        .minimized-content {
+            display: none;
+            padding: 15px 20px;
+            color: white;
+            font-size: 0.9rem;
+        }
+
+        .floating-chatbot.minimized .minimized-content {
+            display: block;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .floating-chatbot {
+                width: calc(100vw - 40px);
+                height: 70vh;
+                bottom: 10px;
+                right: 10px;
+                left: 10px;
+            }
+
+            .floating-chatbot.minimized {
+                width: 200px;
+                height: 60px;
+                right: 10px;
+                left: auto;
+            }
+
+            .landing-content h1 {
+                font-size: 2.5rem;
+            }
+
+            .landing-content p {
+                font-size: 1.2rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .landing-content h1 {
+                font-size: 2rem;
+            }
+
+            .landing-content p {
+                font-size: 1rem;
+            }
+
+            .floating-chatbot {
+                height: 60vh;
+            }
+        }
+
+        /* Animation for chatbot appearance */
+        .floating-chatbot {
+            animation: slideInUp 0.5s ease-out;
+        }
+
+        @keyframes slideInUp {
+            from {
+                transform: translateY(100px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        /* Hover effects */
+        .floating-chatbot:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.4);
+        }
+
+        .floating-chatbot.minimized:hover {
+            transform: translateY(-2px);
+        }
+    </style>
+</head>
+<body>
+    <!-- Main Landing Content -->
+    <div class="landing-content">
+        <h1>Welcome to Our Platform</h1>
+        <p>Experience the future of customer support</p>
+        <p class="subtitle">Click the chatbot in the bottom right to get started!</p>
+    </div>
+
+    <!-- Floating Chatbot -->
+    <div class="floating-chatbot" id="floatingChatbot">
+        <div class="chatbot-header" onclick="toggleChatbot()">
+            <h3>💬 AI Assistant</h3>
+            <div class="chatbot-controls">
+                <button class="control-btn minimize-btn" onclick="event.stopPropagation(); toggleMinimize()" title="Minimize">
+                    <span id="minimizeIcon">−</span>
+                </button>
+                <button class="control-btn close-btn" onclick="event.stopPropagation(); closeChatbot()" title="Close">
+                    ×
+                </button>
+            </div>
+        </div>
+
+        <div class="minimized-content">
+            <div>💬 AI Assistant - Click to expand</div>
+        </div>
+
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <div>Loading chatbot...</div>
+        </div>
+
+        <div class="error-state" id="error" style="display: none;">
+            <div class="error-icon">⚠️</div>
+            <div>Chatbot unavailable</div>
+            <div style="font-size: 0.8rem; margin-top: 5px;">
+                Make sure React app is running
+            </div>
+        </div>
+
+        <iframe 
+            class="chatbot-iframe" 
+            id="chatbot-iframe"
+            src="https://chatbot-ds.kesug.com/"
+            title="AI Chatbot Interface"
+            allow="microphone; camera"
+            sandbox="allow-scripts allow-same-origin allow-forms"
+            onload="hideLoading()"
+            onerror="showError()">
+        </iframe>
+    </div>
+
+    <script>
+        let isMinimized = false;
+
+        // Toggle chatbot visibility
+        function toggleChatbot() {
+            const chatbot = document.getElementById('floatingChatbot');
+            if (isMinimized) {
+                toggleMinimize();
+            }
+        }
+
+        // Toggle minimize/maximize
+        function toggleMinimize() {
+            const chatbot = document.getElementById('floatingChatbot');
+            const minimizeIcon = document.getElementById('minimizeIcon');
+            
+            isMinimized = !isMinimized;
+            
+            if (isMinimized) {
+                chatbot.classList.add('minimized');
+                minimizeIcon.textContent = '+';
+            } else {
+                chatbot.classList.remove('minimized');
+                minimizeIcon.textContent = '−';
+            }
+        }
+
+        // Close chatbot
+        function closeChatbot() {
+            const chatbot = document.getElementById('floatingChatbot');
+            chatbot.style.display = 'none';
+        }
+
+        // Loading and Error Management
+        function hideLoading() {
+            const loading = document.getElementById('loading');
+            const error = document.getElementById('error');
+            if (loading) {
+                loading.style.display = 'none';
+            }
+            if (error) {
+                error.style.display = 'none';
+            }
+        }
+
+        function showError() {
+            const loading = document.getElementById('loading');
+            const error = document.getElementById('error');
+            
+            if (loading) {
+                loading.style.display = 'none';
+            }
+            if (error) {
+                error.style.display = 'block';
+            }
+        }
+
+        // Auto-hide loading after 8 seconds as fallback
+        setTimeout(() => {
+            const loading = document.getElementById('loading');
+            const iframe = document.getElementById('chatbot-iframe');
+            
+            if (loading && loading.style.display !== 'none') {
+                try {
+                    if (iframe.contentWindow) {
+                        hideLoading();
+                    } else {
+                        showError();
+                    }
+                } catch (e) {
+                    showError();
+                }
+            }
+        }, 8000);
+
+        // Add keyboard shortcuts
+        document.addEventListener('keydown', (e) => {
+            // Ctrl + M to minimize/maximize
+            if (e.ctrlKey && e.key === 'm') {
+                e.preventDefault();
+                toggleMinimize();
+            }
+            // Ctrl + W to close
+            if (e.ctrlKey && e.key === 'w') {
+                e.preventDefault();
+                closeChatbot();
+            }
+        });
+
+        // Prevent iframe from closing when clicking inside
+        document.getElementById('chatbot-iframe').addEventListener('click', (e) => {
+            e.stopPropagation();
+        });
+
+        // Add drag functionality (optional)
+        let isDragging = false;
+        let currentX;
+        let currentY;
+        let initialX;
+        let initialY;
+        let xOffset = 0;
+        let yOffset = 0;
+
+        const chatbot = document.getElementById('floatingChatbot');
+        const header = chatbot.querySelector('.chatbot-header');
+
+        header.addEventListener('mousedown', dragStart);
+        document.addEventListener('mousemove', drag);
+        document.addEventListener('mouseup', dragEnd);
+
+        function dragStart(e) {
+            if (e.target.classList.contains('control-btn')) return;
+            
+            initialX = e.clientX - xOffset;
+            initialY = e.clientY - yOffset;
+
+            if (e.target === header || header.contains(e.target)) {
+                isDragging = true;
+            }
+        }
+
+        function drag(e) {
+            if (isDragging) {
+                e.preventDefault();
+                currentX = e.clientX - initialX;
+                currentY = e.clientY - initialY;
+
+                xOffset = currentX;
+                yOffset = currentY;
+
+                chatbot.style.transform = `translate(${currentX}px, ${currentY}px)`;
+            }
+        }
+
+        function dragEnd(e) {
+            initialX = currentX;
+            initialY = currentY;
+            isDragging = false;
+        }
+    </script>
+</body>
+</html>
+
