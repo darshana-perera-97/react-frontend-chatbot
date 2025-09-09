@@ -12,7 +12,8 @@ const Chatbot = () => {
   const messagesEndRef = useRef(null);
 
   // Backend API configuration
-  const API_BASE_URL = 'http://localhost:5111';
+  const API_BASE_URL = 'https://localhost:5111';
+  // const API_BASE_URL = 'http://localhost:5111';
   // const API_BASE_URL = 'https://web-chatbot-backend-w956.onrender.com';
 
   const scrollToBottom = () => {

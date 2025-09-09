@@ -4,6 +4,7 @@ const bodyParser = require('body-parser');
 const axios = require('axios');
 const OpenAI = require('openai');
 const fs = require('fs');
+const https = require("https");
 const path = require('path');
 const { v4: uuidv4 } = require('uuid');
 require('dotenv').config();
@@ -74,12 +75,12 @@ const addMessageToSession = (sessionId, message) => {
   // Load current data
   const sessionIds = loadSessionIds();
   const chats = loadChats();
-  
+
   // Initialize chat array for session if it doesn't exist
   if (!chats[sessionId]) {
     chats[sessionId] = [];
   }
-  
+
   // Add message to chats
   chats[sessionId].push({
     ...message,
@@ -88,11 +89,11 @@ const addMessageToSession = (sessionId, message) => {
 
   // Log message storage
   console.log(`💾 STORED | ${message.sender.toUpperCase()} | ${sessionId} | ${new Date().toISOString()} | ${message.text.substring(0, 50)}${message.text.length > 50 ? '...' : ''}`);
-  
+
   // Update or add session ID entry
   const existingSessionIndex = sessionIds.findIndex(session => session.sessionId === sessionId);
   const now = new Date().toISOString();
-  
+
   if (existingSessionIndex >= 0) {
     // Update existing session's lastChatTime
     sessionIds[existingSessionIndex].lastChatTime = now;
@@ -104,11 +105,11 @@ const addMessageToSession = (sessionId, message) => {
       lastChatTime: now
     });
   }
-  
+
   // Save both files
   saveSessionIds(sessionIds);
   saveChats(chats);
-  
+
   return {
     sessionId: sessionId,
     messages: chats[sessionId]
@@ -226,14 +227,14 @@ const generateResponse = async (userMessage, chatHistory = []) => {
     });
 
     const response = completion.choices[0].message.content;
-    
+
     return {
       text: response,
       confidence: 0.9
     };
   } catch (error) {
     console.error('OpenAI API error:', error);
-    
+
     // Fallback responses for common solar-related queries
     const fallbackResponses = {
       'hello': "Hello! I'm Sarah from SolarMax Solutions. I'm here to help you learn about solar energy and see if it's right for your home or business. What questions do you have about going solar?",
@@ -244,7 +245,7 @@ const generateResponse = async (userMessage, chatHistory = []) => {
       'thanks': "You're very welcome! I'm passionate about helping people make the switch to clean energy. Is there anything else about solar that you'd like to explore?",
       'goodbye': "Thank you for your time! If you're interested in learning more, I'd love to schedule a free consultation to assess your home's solar potential. Have a great day!"
     };
-    
+
     const lowerMessage = userMessage.toLowerCase().trim();
     for (const [key, response] of Object.entries(fallbackResponses)) {
       if (lowerMessage.includes(key)) {
@@ -254,7 +255,7 @@ const generateResponse = async (userMessage, chatHistory = []) => {
         };
       }
     }
-    
+
     return {
       text: "I'm sorry, I'm having trouble connecting to my AI system right now. I'm Sarah from SolarMax Solutions, and I'd love to help you with any solar energy questions. Could you try asking again or let me know what specific information you're looking for?",
       confidence: 0.3
@@ -267,7 +268,7 @@ app.post('/api/session', (req, res) => {
   try {
     const sessionId = generateSessionId();
     const now = new Date().toISOString();
-    
+
     // Add new session to session IDs array
     const sessionIds = loadSessionIds();
     sessionIds.push({
@@ -275,22 +276,22 @@ app.post('/api/session', (req, res) => {
       createdTime: now,
       lastChatTime: now
     });
-    
+
     // Initialize empty chat array for this session
     const chats = loadChats();
     chats[sessionId] = [];
-    
+
     // Save both files
     saveSessionIds(sessionIds);
     saveChats(chats);
 
     // Log session creation
     console.log(`🆕 SESSION | CREATED | ${sessionId} | ${now} | New session created`);
-    
+
     res.json({ sessionId });
   } catch (error) {
     console.error('Error creating session:', error);
-    res.status(500).json({ 
+    res.status(500).json({
       error: 'Internal server error',
       message: 'Failed to create session'
     });
@@ -301,13 +302,13 @@ app.post('/api/session', (req, res) => {
 app.post('/api/chat', async (req, res) => {
   try {
     const { message, sessionId, senderType = 'user' } = req.body;
-    
+
     if (!message || typeof message !== 'string') {
-      return res.status(400).json({ 
-        error: 'Message is required and must be a string' 
+      return res.status(400).json({
+        error: 'Message is required and must be a string'
       });
     }
-    
+
     // Create user message
     const userMessage = {
       id: Date.now(),
@@ -318,12 +319,12 @@ app.post('/api/chat', async (req, res) => {
 
     // Log incoming message
     console.log(`📨 INCOMING | ${senderType.toUpperCase()} | ${sessionId || 'NO_SESSION'} | ${new Date().toISOString()} | ${message}`);
-    
+
     // Store user message in session if sessionId is provided
     if (sessionId) {
       addMessageToSession(sessionId, userMessage);
     }
-    
+
     // Only generate OpenAI response for regular user messages, not admin messages
     if (senderType === 'user') {
       // Get chat history for context
@@ -332,10 +333,10 @@ app.post('/api/chat', async (req, res) => {
         const chats = loadChats();
         chatHistory = chats[sessionId] || [];
       }
-      
+
       // Generate response using OpenAI with chat history
       const response = await generateResponse(message, chatHistory);
-      
+
       // Create bot response
       const botResponse = {
         id: Date.now() + 1,
@@ -347,30 +348,30 @@ app.post('/api/chat', async (req, res) => {
 
       // Log outgoing bot response
       console.log(`🤖 OUTGOING | BOT | ${sessionId || 'NO_SESSION'} | ${new Date().toISOString()} | ${response.text}`);
-      
+
       // Store bot response in session if sessionId is provided
       if (sessionId) {
         addMessageToSession(sessionId, botResponse);
       }
-      
+
       // Simulate some processing time
       await new Promise(resolve => setTimeout(resolve, 500 + Math.random() * 1000));
-      
+
       res.json(botResponse);
     } else {
       // For admin messages, just return the message without generating AI response
       console.log(`👨‍💼 ADMIN | ADMIN | ${sessionId || 'NO_SESSION'} | ${new Date().toISOString()} | ${message}`);
-      
+
       res.json({
         success: true,
         message: 'Admin message sent successfully',
         adminMessage: userMessage
       });
     }
-    
+
   } catch (error) {
     console.error('Error processing message:', error);
-    res.status(500).json({ 
+    res.status(500).json({
       error: 'Internal server error',
       message: 'Sorry, I encountered an error. Please try again.'
     });
@@ -383,14 +384,14 @@ app.get('/api/session/:sessionId', (req, res) => {
     const { sessionId } = req.params;
     const sessionIds = loadSessionIds();
     const chats = loadChats();
-    
+
     const session = sessionIds.find(s => s.sessionId === sessionId);
     if (!session) {
       return res.status(404).json({ error: 'Session not found' });
     }
-    
+
     const sessionChats = chats[sessionId] || [];
-    
+
     res.json({
       sessionId: session.sessionId,
       createdTime: session.createdTime,
@@ -399,7 +400,7 @@ app.get('/api/session/:sessionId', (req, res) => {
     });
   } catch (error) {
     console.error('Error getting session:', error);
-    res.status(500).json({ 
+    res.status(500).json({
       error: 'Internal server error',
       message: 'Failed to get session data'
     });
@@ -413,7 +414,7 @@ app.get('/api/sessions', (req, res) => {
     res.json(sessionIds);
   } catch (error) {
     console.error('Error getting sessions:', error);
-    res.status(500).json({ 
+    res.status(500).json({
       error: 'Internal server error',
       message: 'Failed to get sessions'
     });
@@ -425,40 +426,40 @@ app.get('/api/analytics', (req, res) => {
   try {
     const sessionIds = loadSessionIds();
     const chats = loadChats();
-    
+
     // Calculate analytics
     const totalSessions = sessionIds.length;
     const totalChats = Object.values(chats).reduce((total, sessionChats) => {
       return total + (sessionChats ? sessionChats.length : 0);
     }, 0);
-    
+
     const recurringUsers = sessionIds.filter(session => {
       return new Date(session.lastChatTime) > new Date(session.createdTime);
     }).length;
-    
+
     const uniqueUsers = totalSessions;
-    
+
     // Calculate average chats per session
     const avgChatsPerSession = totalSessions > 0 ? (totalChats / totalSessions).toFixed(2) : 0;
-    
+
     // Calculate conversion rate (recurring users / total users)
     const conversionRate = totalSessions > 0 ? ((recurringUsers / totalSessions) * 100).toFixed(1) : 0;
-    
+
     // Get recent activity (last 24 hours)
     const now = new Date();
     const last24Hours = new Date(now.getTime() - 24 * 60 * 60 * 1000);
-    
+
     const recentSessions = sessionIds.filter(session => {
       return new Date(session.lastChatTime) > last24Hours;
     }).length;
-    
+
     const recentChats = Object.values(chats).reduce((total, sessionChats) => {
       if (!sessionChats) return total;
       return total + sessionChats.filter(msg => {
         return new Date(msg.timestamp) > last24Hours;
       }).length;
     }, 0);
-    
+
     res.json({
       websites: 1,
       totalChats: totalChats,
@@ -474,7 +475,7 @@ app.get('/api/analytics', (req, res) => {
     });
   } catch (error) {
     console.error('Error getting analytics:', error);
-    res.status(500).json({ 
+    res.status(500).json({
       error: 'Internal server error',
       message: 'Failed to get analytics data'
     });
@@ -485,19 +486,19 @@ app.get('/api/analytics', (req, res) => {
 app.post('/api/admin/reply', async (req, res) => {
   try {
     const { message, sessionId } = req.body;
-    
+
     if (!message || typeof message !== 'string') {
-      return res.status(400).json({ 
-        error: 'Message is required and must be a string' 
+      return res.status(400).json({
+        error: 'Message is required and must be a string'
       });
     }
-    
+
     if (!sessionId) {
-      return res.status(400).json({ 
-        error: 'Session ID is required' 
+      return res.status(400).json({
+        error: 'Session ID is required'
       });
     }
-    
+
     // Create admin message
     const adminMessage = {
       id: Date.now(),
@@ -508,19 +509,19 @@ app.post('/api/admin/reply', async (req, res) => {
 
     // Log admin message
     console.log(`👨‍💼 ADMIN | ADMIN | ${sessionId} | ${new Date().toISOString()} | ${message}`);
-    
+
     // Store admin message in session
     addMessageToSession(sessionId, adminMessage);
-    
+
     res.json({
       success: true,
       message: 'Admin reply sent successfully',
       adminMessage: adminMessage
     });
-    
+
   } catch (error) {
     console.error('Error sending admin reply:', error);
-    res.status(500).json({ 
+    res.status(500).json({
       error: 'Internal server error',
       message: 'Failed to send admin reply'
     });
@@ -532,14 +533,14 @@ app.get('/api/chat-stats', (req, res) => {
   try {
     const sessionIds = loadSessionIds();
     const chats = loadChats();
-    
+
     // Get all messages across all sessions
     const allMessages = Object.values(chats).flat();
-    
+
     // Calculate message statistics
     const userMessages = allMessages.filter(msg => msg.sender === 'user');
     const botMessages = allMessages.filter(msg => msg.sender === 'bot');
-    
+
     // Get average response time (simplified)
     const responseTimes = [];
     for (let i = 0; i < allMessages.length - 1; i++) {
@@ -548,11 +549,11 @@ app.get('/api/chat-stats', (req, res) => {
         responseTimes.push(responseTime);
       }
     }
-    
-    const avgResponseTime = responseTimes.length > 0 
-      ? responseTimes.reduce((a, b) => a + b, 0) / responseTimes.length 
+
+    const avgResponseTime = responseTimes.length > 0
+      ? responseTimes.reduce((a, b) => a + b, 0) / responseTimes.length
       : 0;
-    
+
     // Get most common user messages (top 5)
     const messageCounts = {};
     userMessages.forEach(msg => {
@@ -561,26 +562,26 @@ app.get('/api/chat-stats', (req, res) => {
         messageCounts[text] = (messageCounts[text] || 0) + 1;
       }
     });
-    
+
     const topMessages = Object.entries(messageCounts)
-      .sort(([,a], [,b]) => b - a)
+      .sort(([, a], [, b]) => b - a)
       .slice(0, 5)
       .map(([text, count]) => ({ text, count }));
-    
+
     res.json({
       totalMessages: allMessages.length,
       userMessages: userMessages.length,
       botMessages: botMessages.length,
       avgResponseTime: Math.round(avgResponseTime / 1000), // in seconds
       topUserMessages: topMessages,
-      sessionsWithMessages: Object.keys(chats).filter(sessionId => 
+      sessionsWithMessages: Object.keys(chats).filter(sessionId =>
         chats[sessionId] && chats[sessionId].length > 0
       ).length,
       lastUpdated: new Date().toISOString()
     });
   } catch (error) {
     console.error('Error getting chat stats:', error);
-    res.status(500).json({ 
+    res.status(500).json({
       error: 'Internal server error',
       message: 'Failed to get chat statistics'
     });
@@ -589,8 +590,8 @@ app.get('/api/chat-stats', (req, res) => {
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
-  res.json({ 
-    status: 'OK', 
+  res.json({
+    status: 'OK',
     message: 'Chatbot API is running',
     timestamp: new Date().toISOString()
   });
@@ -598,7 +599,7 @@ app.get('/api/health', (req, res) => {
 
 // Root endpoint
 app.get('/', (req, res) => {
-  res.json({ 
+  res.json({
     message: 'Chatbot Backend API',
     version: '1.0.0',
     endpoints: {
@@ -614,8 +615,20 @@ app.get('/', (req, res) => {
   });
 });
 
-app.listen(PORT, () => {
-  console.log(`🚀 Chatbot backend server running on port ${PORT}`);
-  console.log(`📡 API available at http://localhost:${PORT}`);
-  console.log(`🏥 Health check at http://localhost:${PORT}/api/health`);
+// Load SSL certs
+const options = {
+  key: fs.readFileSync("ssl/server.key"),
+  cert: fs.readFileSync("ssl/server.crt")
+};
+
+// Start HTTPS server
+https.createServer(options, app).listen(5111, () => {
+  console.log("Server running at https://localhost:5111");
 });
+
+
+// app.listen(PORT, () => {
+//   console.log(`🚀 Chatbot backend server running on port ${PORT}`);
+//   console.log(`📡 API available at http://localhost:${PORT}`);
+//   console.log(`🏥 Health check at http://localhost:${PORT}/api/health`);
+// });
