@@ -118,7 +118,12 @@ const addMessageToSession = (sessionId, message) => {
 
 // Middleware
 app.use(cors({
-  origin: ['http://localhost:3000', 'http://localhost:3001'], // Admin and chatbot ports
+  origin: [
+    'http://localhost:3000', 
+    'http://localhost:3001', 
+    'https://chatbot.nexgenai.asia',
+    'https://admin.nexgenai.asia'
+  ], // Admin, chatbot, and production domains
   credentials: true
 }));
 app.use(bodyParser.json());
