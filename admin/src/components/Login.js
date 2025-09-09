@@ -41,14 +41,14 @@ const Login = ({ onLogin }) => {
         <div className="row justify-content-center">
           <div className="col-md-6 col-lg-4">
             <div className="login-card p-4">
-              <div className="text-center mb-4">
-                <h2 className="text-white">Admin Login</h2>
-                <p className="text-muted">Enter your credentials to access the dashboard</p>
-              </div>
+            <div className="text-center mb-4">
+              <h2 className="text-primary fw-bold">Admin Login</h2>
+              <p className="text-muted">Enter your credentials to access the dashboard</p>
+            </div>
 
               <form onSubmit={handleSubmit}>
                 <div className="mb-3">
-                  <label htmlFor="username" className="form-label text-white">Username</label>
+                  <label htmlFor="username" className="form-label fw-medium">Username</label>
                   <input
                     type="text"
                     className="form-control"
@@ -63,7 +63,7 @@ const Login = ({ onLogin }) => {
                 </div>
 
                 <div className="mb-4">
-                  <label htmlFor="password" className="form-label text-white">Password</label>
+                  <label htmlFor="password" className="form-label fw-medium">Password</label>
                   <input
                     type="password"
                     className="form-control"

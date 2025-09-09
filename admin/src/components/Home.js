@@ -7,7 +7,7 @@ const Home = () => {
         <div className="col-12">
           <div className="card">
             <div className="card-header">
-              <h4 className="mb-0 text-white">Welcome to Admin Dashboard</h4>
+              <h4 className="mb-0 text-primary fw-bold">Welcome to Admin Dashboard</h4>
             </div>
             <div className="card-body">
               <p className="text-muted">This is the home page. Content will be added here in the future.</p>

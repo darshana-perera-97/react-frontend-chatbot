@@ -7,7 +7,7 @@ const Settings = () => {
         <div className="col-12">
           <div className="card">
             <div className="card-header">
-              <h4 className="mb-0 text-white">Settings</h4>
+              <h4 className="mb-0 text-primary fw-bold">Settings</h4>
             </div>
             <div className="card-body">
               <p className="text-muted">Settings page will be implemented here in the future.</p>

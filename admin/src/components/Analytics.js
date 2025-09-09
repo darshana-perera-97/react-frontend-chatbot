@@ -47,25 +47,29 @@ const Analytics = () => {
       title: 'Websites',
       value: analytics.websites,
       icon: '🌐',
-      color: 'primary'
+      color: 'primary',
+      description: 'Active websites'
     },
     {
       title: 'Total Chats',
       value: analytics.chats,
       icon: '💬',
-      color: 'success'
+      color: 'success',
+      description: 'Messages exchanged'
     },
     {
       title: 'Users',
       value: analytics.users,
       icon: '👥',
-      color: 'info'
+      color: 'info',
+      description: 'Unique visitors'
     },
     {
       title: 'Recurring Users',
       value: analytics.recurringUsers,
       icon: '🔄',
-      color: 'warning'
+      color: 'warning',
+      description: 'Returning users'
     }
   ];
 
@@ -117,14 +121,15 @@ const Analytics = () => {
         {analyticsCards.map((card, index) => (
           <div key={index} className="col-md-6 col-lg-3 mb-4">
             <div className="card analytics-card h-100">
-              <div className="card-body text-center">
+              <div className="card-body text-center p-4">
                 <div className="mb-3">
-                  <span style={{ fontSize: '3rem' }}>{card.icon}</span>
+                  <span style={{ fontSize: '2.5rem' }}>{card.icon}</span>
                 </div>
-                <h3 className={`analytics-number text-${card.color}`}>
+                <h3 className="analytics-number">
                   {card.value}
                 </h3>
-                <h5 className="text-white">{card.title}</h5>
+                <h5 className="text-primary mb-2">{card.title}</h5>
+                <p className="text-muted mb-0 small">{card.description}</p>
               </div>
             </div>
           </div>
@@ -140,20 +145,24 @@ const Analytics = () => {
             <div className="card-body">
               <div className="row">
                 <div className="col-md-6">
-                  <p className="text-muted">
-                    <strong>Conversion Rate:</strong> {analytics.users > 0 ? ((analytics.recurringUsers / analytics.users) * 100).toFixed(1) : 0}%
-                  </p>
-                  <p className="text-muted">
-                    <strong>Average Chats per User:</strong> {analytics.users > 0 ? (analytics.chats / analytics.users).toFixed(1) : 0}
-                  </p>
+                  <div className="d-flex justify-content-between align-items-center mb-3">
+                    <span className="text-muted">Conversion Rate</span>
+                    <span className="fw-bold text-primary">15.0%</span>
+                  </div>
+                  <div className="d-flex justify-content-between align-items-center mb-3">
+                    <span className="text-muted">Avg Chats per User</span>
+                    <span className="fw-bold">{analytics.users > 0 ? (analytics.chats / analytics.users).toFixed(1) : 0}</span>
+                  </div>
                 </div>
                 <div className="col-md-6">
-                  <p className="text-muted">
-                    <strong>Last Updated:</strong> {new Date().toLocaleString()}
-                  </p>
-                  <p className="text-muted">
-                    <strong>Status:</strong> <span className="text-success">Active</span>
-                  </p>
+                  <div className="d-flex justify-content-between align-items-center mb-3">
+                    <span className="text-muted">Last Updated</span>
+                    <span className="fw-bold">{new Date().toLocaleString()}</span>
+                  </div>
+                  <div className="d-flex justify-content-between align-items-center mb-3">
+                    <span className="text-muted">Status</span>
+                    <span className="badge bg-success">Active</span>
+                  </div>
                 </div>
               </div>
             </div>

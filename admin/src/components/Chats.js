@@ -98,7 +98,7 @@ const Chats = () => {
     <div className="container-fluid">
       <div className="row mb-4">
         <div className="col-12">
-          <h2 className="text-white">Chat Management</h2>
+          <h2 className="text-primary fw-bold">Chat Management</h2>
           <p className="text-muted">View and manage user conversations</p>
         </div>
       </div>
@@ -108,7 +108,7 @@ const Chats = () => {
         <div className="col-md-4">
           <div className="card">
             <div className="card-header">
-              <h5 className="mb-0 text-white">User Sessions</h5>
+              <h5 className="mb-0 text-primary fw-bold">User Sessions</h5>
             </div>
             <div className="card-body p-0">
               <div className="list-group list-group-flush">
@@ -143,13 +143,13 @@ const Chats = () => {
         <div className="col-md-8">
           <div className="card">
             <div className="card-header d-flex justify-content-between align-items-center">
-              <h5 className="mb-0 text-white">
+              <h5 className="mb-0 text-primary fw-bold">
                 {selectedSession ? `Chat with User ${selectedSession.sessionId.substring(0, 8)}...` : 'Select a session to view chat'}
               </h5>
               {selectedSession && (
-                <small className="text-muted">
+                <span className="badge bg-primary">
                   {chatMessages.length} messages
-                </small>
+                </span>
               )}
             </div>
             <div className="card-body p-0">

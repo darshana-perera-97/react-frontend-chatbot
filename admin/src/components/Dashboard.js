@@ -27,16 +27,16 @@ const Dashboard = ({ children, onLogout }) => {
       <div className={`sidebar ${sidebarCollapsed ? 'col-1' : 'col-md-3 col-lg-2'} p-0`}>
         <div className="d-flex flex-column h-100">
           {/* Header */}
-          <div className="p-3 border-bottom">
+          <div className="p-4 border-bottom">
             <div className="d-flex align-items-center">
               <button
-                className="btn btn-link text-white p-0 me-2"
+                className="btn btn-link text-primary p-0 me-3"
                 onClick={toggleSidebar}
               >
                 <i className="fas fa-bars"></i>
               </button>
               {!sidebarCollapsed && (
-                <h5 className="mb-0 text-white">Admin Panel</h5>
+                <h5 className="mb-0 text-primary fw-bold">Admin Panel</h5>
               )}
             </div>
           </div>
@@ -45,15 +45,15 @@ const Dashboard = ({ children, onLogout }) => {
           <nav className="flex-grow-1 p-3">
             <ul className="nav nav-pills flex-column">
               {menuItems.map((item) => (
-                <li className="nav-item mb-2" key={item.path}>
+                <li className="nav-item mb-1" key={item.path}>
                   <button
                     className={`nav-link w-100 text-start d-flex align-items-center ${
                       location.pathname === item.path ? 'active' : ''
                     }`}
                     onClick={() => navigate(item.path)}
                   >
-                    <span className="me-3">{item.icon}</span>
-                    {!sidebarCollapsed && <span>{item.label}</span>}
+                    <span className="me-3" style={{ fontSize: '1.1rem' }}>{item.icon}</span>
+                    {!sidebarCollapsed && <span className="fw-medium">{item.label}</span>}
                   </button>
                 </li>
               ))}
@@ -66,7 +66,7 @@ const Dashboard = ({ children, onLogout }) => {
               className="btn btn-outline-danger w-100"
               onClick={handleLogout}
             >
-              {!sidebarCollapsed && <span>Logout</span>}
+              {!sidebarCollapsed && <span className="fw-medium">Logout</span>}
               <i className="fas fa-sign-out-alt ms-2"></i>
             </button>
           </div>
