@@ -6,11 +6,14 @@ const Chatbot = () => {
   const [messages, setMessages] = useState([]);
   const [inputMessage, setInputMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [isLoadingHistory, setIsLoadingHistory] = useState(false);
   const [connectionStatus, setConnectionStatus] = useState('disconnected');
+  const [sessionId, setSessionId] = useState(null);
   const messagesEndRef = useRef(null);
 
   // Backend API configuration
-  const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5111';
+  const API_BASE_URL = 'http://localhost:5111';
+  // const API_BASE_URL = 'https://web-chatbot-backend-w956.onrender.com';
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -20,10 +23,87 @@ const Chatbot = () => {
     scrollToBottom();
   }, [messages]);
 
-  // Check backend connection on component mount
+  // Initialize session and check backend connection on component mount
   useEffect(() => {
+    initializeSession();
     checkBackendConnection();
   }, []);
+
+  // Initialize or retrieve session ID
+  const initializeSession = async () => {
+    try {
+      // Check if session ID exists in localStorage
+      let existingSessionId = localStorage.getItem('chatbotSessionId');
+      
+      if (existingSessionId) {
+        // Verify session exists on backend and load chat history
+        setIsLoadingHistory(true);
+        try {
+          const response = await fetch(`${API_BASE_URL}/api/session/${existingSessionId}`);
+          
+          if (response.ok) {
+            const sessionData = await response.json();
+            setSessionId(existingSessionId);
+            
+            // Load previous chat messages
+            if (sessionData.messages && sessionData.messages.length > 0) {
+              const formattedMessages = sessionData.messages.map(msg => ({
+                id: msg.id,
+                text: msg.text,
+                sender: msg.sender,
+                timestamp: new Date(msg.timestamp).toLocaleTimeString(),
+                confidence: msg.confidence
+              }));
+              setMessages(formattedMessages);
+              console.log(`Loaded ${formattedMessages.length} previous messages for session:`, existingSessionId);
+            } else {
+              console.log('No previous messages found for session:', existingSessionId);
+            }
+          } else {
+            // Session not found on backend, create new one
+            console.log('Session not found on backend, creating new session');
+            await createNewSession();
+          }
+        } catch (error) {
+          console.error('Error loading session from backend:', error);
+          // If backend is unavailable, still use the session ID from localStorage
+          setSessionId(existingSessionId);
+        } finally {
+          setIsLoadingHistory(false);
+        }
+      } else {
+        // No session ID in localStorage, create new session
+        await createNewSession();
+      }
+    } catch (error) {
+      console.error('Error initializing session:', error);
+      setIsLoadingHistory(false);
+    }
+  };
+
+  // Helper function to create a new session
+  const createNewSession = async () => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/session`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        const newSessionId = data.sessionId;
+        setSessionId(newSessionId);
+        localStorage.setItem('chatbotSessionId', newSessionId);
+        console.log('Created new session:', newSessionId);
+      } else {
+        console.error('Failed to create session');
+      }
+    } catch (error) {
+      console.error('Error creating new session:', error);
+    }
+  };
 
   const checkBackendConnection = async () => {
     try {
@@ -47,7 +127,10 @@ const Chatbot = () => {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ message }),
+        body: JSON.stringify({ 
+          message,
+          sessionId: sessionId 
+        }),
       });
 
       if (!response.ok) {
@@ -114,11 +197,14 @@ const Chatbot = () => {
   const getFallbackResponse = (message) => {
     const lowerMessage = message.toLowerCase().trim();
     const fallbackResponses = {
-      'hello': 'Hi there! I\'m running in offline mode. How can I help you?',
-      'help': 'I\'m here to assist you! (Note: I\'m currently offline)',
-      'thanks': 'You\'re welcome!',
-      'goodbye': 'Goodbye! Have a great day!',
-      'how are you': 'I\'m doing well, thank you for asking!'
+      'hello': 'Hello! I\'m Sarah from SolarMax Solutions. I\'m currently in offline mode, but I\'d love to help you learn about solar energy. What questions do you have?',
+      'hi': 'Hi there! I\'m excited to help you explore solar options. I\'m running offline right now, but I can still answer basic questions about solar energy.',
+      'help': 'I\'m here to help with solar energy questions! I can discuss costs, savings, installation, and financing options. What would you like to know?',
+      'solar': 'Great question about solar! Solar panels can significantly reduce your electricity bills and increase your home\'s value. The average system pays for itself in 6-8 years.',
+      'cost': 'Solar costs have dropped dramatically! A typical residential system costs $15,000-$25,000 before the 30% federal tax credit. Most homeowners see positive ROI within 6-8 years.',
+      'savings': 'Solar can save you thousands! Most homeowners see 50-90% reduction in electricity bills, saving $1,000-$3,000 annually on average.',
+      'thanks': 'You\'re very welcome! I\'m passionate about helping people switch to clean energy. Is there anything else about solar you\'d like to explore?',
+      'goodbye': 'Thank you for your time! If you\'re interested in solar, I\'d love to schedule a free consultation when I\'m back online. Have a great day!'
     };
     return fallbackResponses[lowerMessage];
   };
@@ -130,39 +216,66 @@ const Chatbot = () => {
     }
   };
 
+  // Start a new session
+  const startNewSession = async () => {
+    try {
+      // Clear current session from localStorage
+      localStorage.removeItem('chatbotSessionId');
+      
+      // Clear current messages
+      setMessages([]);
+      
+      // Create new session
+      await createNewSession();
+      
+      console.log('Started new session');
+    } catch (error) {
+      console.error('Error starting new session:', error);
+    }
+  };
+
   return (
     <div className="chatbot-container">
       <div className="chatbot-header">
-        <h2>AI Chatbot with Backend</h2>
+        <div className="header-top">
+          <h2>☀️ Solar Energy Assistant</h2>
+          <button 
+            onClick={startNewSession}
+            className="new-session-btn"
+            title="Start a new conversation"
+          >
+            🔄 New Session
+          </button>
+        </div>
         <div className="connection-status">
           <span className={`status-indicator ${connectionStatus}`}>
-            {connectionStatus === 'connected' ? '🟢 Connected' : 
-             connectionStatus === 'error' ? '🔴 Offline' : '🟡 Connecting...'}
+            {connectionStatus === 'connected' ? '🟢 Connected' :
+              connectionStatus === 'error' ? '🔴 Offline' : '🟡 Connecting...'}
           </span>
+          {sessionId && (
+            <span className="session-info">
+              Session: {sessionId.substring(0, 8)}...
+            </span>
+          )}
         </div>
-        <p>Ask me anything! I'm powered by a backend AI service.</p>
+        <p>Hi! I'm Sarah, your solar energy expert. Ask me about solar panels, savings, financing, or anything solar-related!</p>
       </div>
-      
+
       <div className="chatbot-messages">
-        {messages.length === 0 && (
-          <div className="welcome-message">
-            <p>Welcome! I'm an AI chatbot powered by a backend service.</p>
-            <p>Try asking me:</p>
-            <ul>
-              <li>"Hello" or "Hi"</li>
-              <li>"Help me with..."</li>
-              <li>"What's the time?"</li>
-              <li>"How are you?"</li>
-              <li>"Tell me about the weather"</li>
-            </ul>
-            {connectionStatus === 'error' && (
-              <p className="offline-notice">
-                ⚠️ Currently running in offline mode. Some features may be limited.
-              </p>
-            )}
+        {isLoadingHistory && (
+          <div className="loading-message">
+            <p>📚 Loading chat history...</p>
           </div>
         )}
-        
+
+        {connectionStatus === 'error' && messages.length === 0 && !isLoadingHistory && (
+          <div className="welcome-message">
+            <p className="offline-notice">
+              ⚠️ Currently running in offline mode. Some features may be limited.
+            </p>
+          </div>
+        )}
+
         {messages.map((message) => (
           <div
             key={message.id}

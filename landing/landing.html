@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -13,7 +14,7 @@
 
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            /* background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); */
             min-height: 100vh;
             overflow-x: hidden;
         }
@@ -59,6 +60,7 @@
                 opacity: 0;
                 transform: translateY(30px);
             }
+
             to {
                 opacity: 1;
                 transform: translateY(0);
@@ -171,8 +173,13 @@
         }
 
         @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
         }
 
         /* Error State */
@@ -254,6 +261,7 @@
                 transform: translateY(100px);
                 opacity: 0;
             }
+
             to {
                 transform: translateY(0);
                 opacity: 1;
@@ -271,6 +279,7 @@
         }
     </style>
 </head>
+
 <body>
     <!-- Main Landing Content -->
     <div class="landing-content">
@@ -284,7 +293,8 @@
         <div class="chatbot-header" onclick="toggleChatbot()">
             <h3>💬 AI Assistant</h3>
             <div class="chatbot-controls">
-                <button class="control-btn minimize-btn" onclick="event.stopPropagation(); toggleMinimize()" title="Minimize">
+                <button class="control-btn minimize-btn" onclick="event.stopPropagation(); toggleMinimize()"
+                    title="Minimize">
                     <span id="minimizeIcon">−</span>
                 </button>
                 <button class="control-btn close-btn" onclick="event.stopPropagation(); closeChatbot()" title="Close">
@@ -310,7 +320,11 @@
             </div>
         </div>
 
-        <iframe 
+        <iframe class="chatbot-iframe" id="chatbot-iframe" src="http://localhost:3000/" title="AI Chatbot Interface"
+            allow="microphone; camera" sandbox="allow-scripts allow-same-origin allow-forms" onload="hideLoading()"
+            onerror="showError()">
+        </iframe>
+        <!-- <iframe 
             class="chatbot-iframe" 
             id="chatbot-iframe"
             src="https://chatbot.nexgenai.asia/"
@@ -319,7 +333,7 @@
             sandbox="allow-scripts allow-same-origin allow-forms"
             onload="hideLoading()"
             onerror="showError()">
-        </iframe>
+        </iframe> -->
     </div>
 
     <script>
@@ -337,9 +351,9 @@
         function toggleMinimize() {
             const chatbot = document.getElementById('floatingChatbot');
             const minimizeIcon = document.getElementById('minimizeIcon');
-            
+
             isMinimized = !isMinimized;
-            
+
             if (isMinimized) {
                 chatbot.classList.add('minimized');
                 minimizeIcon.textContent = '+';
@@ -370,7 +384,7 @@
         function showError() {
             const loading = document.getElementById('loading');
             const error = document.getElementById('error');
-            
+
             if (loading) {
                 loading.style.display = 'none';
             }
@@ -383,7 +397,7 @@
         setTimeout(() => {
             const loading = document.getElementById('loading');
             const iframe = document.getElementById('chatbot-iframe');
-            
+
             if (loading && loading.style.display !== 'none') {
                 try {
                     if (iframe.contentWindow) {
@@ -434,7 +448,7 @@
 
         function dragStart(e) {
             if (e.target.classList.contains('control-btn')) return;
-            
+
             initialX = e.clientX - xOffset;
             initialY = e.clientY - yOffset;
 
@@ -463,5 +477,5 @@
         }
     </script>
 </body>
-</html>
 
+</html>

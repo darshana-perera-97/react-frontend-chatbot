@@ -1,15 +1,17 @@
-# React Frontend Chatbot with Backend
+# Solar Energy Sales Chatbot
 
-A modern chatbot application with a React frontend and Node.js/Express backend for generating AI responses.
+A specialized AI-powered chatbot for solar energy sales, featuring a React frontend and Node.js/Express backend with OpenAI integration.
 
 ## Features
 
-- 🤖 **AI-Powered Responses**: Backend generates intelligent responses based on user input
+- ☀️ **Solar Expert AI**: Powered by OpenAI GPT-3.5-turbo with specialized solar sales training
+- 💬 **Sales-Focused Conversations**: Expert responses about solar panels, costs, savings, and financing
 - 🔄 **Real-time Communication**: Frontend communicates with backend via REST API
-- 📱 **Responsive Design**: Beautiful, modern UI that works on all devices
+- 📱 **Responsive Design**: Beautiful, modern UI optimized for customer interactions
 - 🔌 **Connection Status**: Visual indicator showing backend connection status
-- 🛡️ **Error Handling**: Graceful fallback when backend is unavailable
+- 🛡️ **Error Handling**: Graceful fallback with solar-specific responses when backend is unavailable
 - ⚡ **Loading States**: User-friendly loading indicators
+- 🎯 **Sales Persona**: Sarah, an experienced solar energy consultant with 8+ years experience
 
 ## Project Structure
 
@@ -104,25 +106,30 @@ console.log(botResponse.text); // Bot's response
 
 #### Backend (.env)
 ```
+# OpenAI API Configuration
+OPENAI_API_KEY=your_openai_api_key_here
+
+# Server Configuration
 PORT=5111
 NODE_ENV=development
 ```
 
 #### Frontend (.env)
 ```
-REACT_APP_API_URL=http://localhost:5111
+REACT_APP_API_URL=https://web-chatbot-backend-05sr.onrender.com
 ```
 
 ## How It Works
 
 ### Backend Response Generation
 
-The backend uses intelligent keyword matching and context-aware responses:
+The backend uses OpenAI GPT-3.5-turbo with a specialized solar sales prompt:
 
-1. **Keyword Detection**: Analyzes user input for specific keywords
-2. **Context Understanding**: Provides contextual responses based on detected patterns
-3. **Confidence Scoring**: Each response includes a confidence level
-4. **Fallback Handling**: Graceful handling of unrecognized inputs
+1. **AI-Powered Responses**: Uses OpenAI's language model for intelligent, contextual responses
+2. **Solar Sales Expertise**: Trained with comprehensive solar energy knowledge and sales techniques
+3. **Persona-Based**: Responds as Sarah, an experienced solar consultant with specific personality traits
+4. **Fallback System**: Solar-specific fallback responses when OpenAI is unavailable
+5. **Confidence Scoring**: Each response includes a confidence level based on AI certainty
 
 ### Frontend Integration
 
@@ -133,17 +140,25 @@ The backend uses intelligent keyword matching and context-aware responses:
 
 ## Customization
 
-### Adding New Response Patterns
+### Customizing the Solar Sales Prompt
 
-Edit `backend/server.js` and modify the `generateResponse` function:
+Edit `backend/server.js` and modify the `SOLAR_SALES_PROMPT` constant:
 
 ```javascript
-if (message.includes('your_keyword')) {
-  return {
-    text: "Your custom response here",
-    confidence: 0.8
-  };
-}
+const SOLAR_SALES_PROMPT = `You are Sarah, an expert solar energy sales consultant...
+// Modify the prompt to change personality, expertise areas, or selling points
+`;
+```
+
+### Adding New Fallback Responses
+
+Edit the `fallbackResponses` object in the `generateResponse` function:
+
+```javascript
+const fallbackResponses = {
+  'your_keyword': 'Your custom solar response here',
+  // Add more fallback responses
+};
 ```
 
 ### Styling
