@@ -1,0 +1,38 @@
+<VirtualHost *:80>
+    backendName backend.nexgenai.asia
+    backendAlias www.backend.nexgenai.asia
+
+    # If you ever serve any local static path, set DocumentRoot accordingly.
+    DocumentRoot /var/www/html
+
+    # Reverse proxy to your PM2 app on 5111
+    ProxyPreserveHost On
+    ProxyPass        / http://127.0.0.1:5111/
+    ProxyPassReverse / http://127.0.0.1:5111/
+
+    # (Optional) Health check passthrough
+    <Location "/api/health">
+        ProxyPass        http://127.0.0.1:5111/api/health
+        ProxyPassReverse http://127.0.0.1:5111/api/health
+    </Location>
+
+    # Basic security headers (helpful, harmless on HTTP; certbot will add HTTPS vhost)
+    Header always set X-Content-Type-Options "nosniff"
+    Header always set X-Frame-Options "SAMEORIGIN"
+    Header always set Referrer-Policy "strict-origin-when-cross-origin"
+    Header always set X-XSS-Protection "1; mode=block"
+
+    # Allow .well-known for certbot challenges
+    Alias /.well-known/ /var/www/html/.well-known/
+    <Directory "/var/www/html/.well-known/">
+        Options None
+        AllowOverride None
+        Require all granted
+    </Directory>
+
+    ErrorLog ${APACHE_LOG_DIR}/backend.nexgenai.asia-error.log
+    CustomLog ${APACHE_LOG_DIR}/backend.nexgenai.asia-access.log combined
+</VirtualHost>
+
+
+<!-- sudo a2ensite backend.nexgenai.asia.conf -->
